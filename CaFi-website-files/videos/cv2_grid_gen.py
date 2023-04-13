@@ -86,7 +86,7 @@ class ExtractImageFromVideo(object):
             
 def create_image_grid(images, grid_size=None):
     border_size = 6
-    split_border = 12
+    split_border = 24
     assert images.ndim == 3 or images.ndim == 4
     num, img_w, img_h = images.shape[0], images.shape[-2], images.shape[-3]
 

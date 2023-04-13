@@ -96,21 +96,50 @@ def create_image_grid(images, grid_size=None):
         grid_w = max(int(np.ceil(np.sqrt(num))), 1)
         grid_h = max((num - 1) // grid_w + 1, 1)
 
-    grid = np.zeros([grid_h * img_h + (grid_h + 1) * border_size, grid_w * img_w + (grid_w + 2) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
-    grid_shape = grid.shape
-    grid[:, :grid_shape[1] // 2, ...] = np.array([0, 62, 81])
-    grid[:, grid_shape[1] // 2:, ...] = np.array([81, 62, 62])
-    for idx in range(num):
-        x = (idx % grid_w) * (img_w + border_size) + border_size
-        y = (idx // grid_w) * (img_h + border_size) + border_size
+    grid_w += 1
+    labels = ["bench", "cabinet", "car", "cellphone", "chair", "couch", "firearm", "lamp", "monitor", "plane", "speaker", "table", "watercraft"]
 
-        if (idx % grid_w) >= 3:
-            if (idx % grid_w) == 3:
+    grid = np.zeros([grid_h * img_h + (grid_h + 1) * border_size + img_h // 2, grid_w * img_w + (grid_w + 2) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
+    labels_width = border_size + img_w
+    grid_width = grid.shape[1] - labels_width
+    grid[:, : labels_width, ...] = np.array([255, 255, 255])
+    grid[:, labels_width : labels_width + grid_width // 2, ...] = np.array([0, 62, 81])
+    grid[:, labels_width + grid_width // 2 :, ...] = np.array([81, 62, 62])
+
+    font = cv2.FONT_HERSHEY_DUPLEX
+    font_scale = 3
+    font_thickness = 3
+    grid[:img_h // 2, :, ...] = np.array([255, 255, 255])
+
+    (label_width, label_height), baseline = cv2.getTextSize("Input NeRFs", font, font_scale, font_thickness)
+    inp_label_pos = (labels_width + grid_width // 4 - label_width // 2, img_h // 4 + label_height // 2)
+    grid = cv2.putText(grid, "Input NeRFs", inp_label_pos, font, font_scale, (0, 0, 0), thickness = font_thickness)
+
+    can_label_pos = (labels_width + 3 * grid_width // 4 - label_width // 2, img_h // 4 + label_height // 2)
+    (label_width, label_height), baseline = cv2.getTextSize("Canonical Fields", font, font_scale, font_thickness)
+    grid = cv2.putText(grid, "Canonical Fields", can_label_pos, font, font_scale, (0, 0, 0), thickness = font_thickness)
+
+    for idx in range(grid_w * grid_h):
+        x = (idx % grid_w) * (img_w + border_size) + border_size 
+        y = (idx // grid_w) * (img_h + border_size) + border_size + img_h // 2
+
+        if (idx % grid_w) == 0:
+            label = labels[idx // grid_w]
+            (label_width, label_height), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
+            font_pos = (x + img_w // 2 - label_width // 2, y + img_h // 2 + label_height // 2)
+            grid = cv2.putText(grid, label, font_pos, font, font_scale, (0, 0, 0), thickness = font_thickness)
+            continue
+
+        # x -= img_w // 2
+        if (idx % grid_w) >= 4:
+            if (idx % grid_w) == 4:
                 grid[:, x : x + split_border, ...] = np.array([255, 255, 255])
+
             x += split_border
             x += border_size
 
-        grid[y : y + img_h, x : x + img_w, ...] = images[idx]
+        img_idx = int(idx - np.ceil(idx / grid_w))
+        grid[y : y + img_h, x : x + img_w, ...] = images[img_idx]
 
     # plt.imshow(grid)
     # plt.show()

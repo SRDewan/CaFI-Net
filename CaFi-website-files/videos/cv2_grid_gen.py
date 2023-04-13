@@ -99,8 +99,8 @@ def create_image_grid(images, grid_size=None):
     grid_w += 1
     labels = ["bench", "cabinet", "car", "cellphone", "chair", "couch", "firearm", "lamp", "monitor", "plane", "speaker", "table", "watercraft"]
 
-    grid = np.zeros([grid_h * img_h + (grid_h + 1) * border_size + img_h // 2, grid_w * img_w + (grid_w + 2) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
-    labels_width = border_size + img_w
+    grid = np.zeros([grid_h * img_h + (grid_h + 1) * border_size + img_h // 2, grid_w * img_w + (grid_w + 1) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
+    labels_width = img_w
     grid_width = grid.shape[1] - labels_width
     grid[:, : labels_width, ...] = np.array([255, 255, 255])
     grid[:, labels_width : labels_width + grid_width // 2, ...] = np.array([0, 62, 81])
@@ -112,15 +112,15 @@ def create_image_grid(images, grid_size=None):
     grid[:img_h // 2, :, ...] = np.array([255, 255, 255])
 
     (label_width, label_height), baseline = cv2.getTextSize("Input NeRFs", font, font_scale, font_thickness)
-    inp_label_pos = (labels_width + grid_width // 4 - label_width // 2, img_h // 4 + label_height // 2)
+    inp_label_pos = (labels_width + (grid_width - split_border) // 4 - label_width // 2, img_h // 4 + label_height // 2)
     grid = cv2.putText(grid, "Input NeRFs", inp_label_pos, font, font_scale, (0, 0, 0), thickness = font_thickness)
 
-    can_label_pos = (labels_width + 3 * grid_width // 4 - label_width // 2, img_h // 4 + label_height // 2)
     (label_width, label_height), baseline = cv2.getTextSize("Canonical Fields", font, font_scale, font_thickness)
+    can_label_pos = (labels_width + (grid_width - split_border) // 2 + split_border + (grid_width - split_border) // 4 - label_width // 2, img_h // 4 + label_height // 2)
     grid = cv2.putText(grid, "Canonical Fields", can_label_pos, font, font_scale, (0, 0, 0), thickness = font_thickness)
 
     for idx in range(grid_w * grid_h):
-        x = (idx % grid_w) * (img_w + border_size) + border_size 
+        x = (idx % grid_w) * (img_w + border_size)
         y = (idx // grid_w) * (img_h + border_size) + border_size + img_h // 2
 
         if (idx % grid_w) == 0:

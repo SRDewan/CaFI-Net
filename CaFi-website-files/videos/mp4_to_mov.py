@@ -1,6 +1,6 @@
 import os
 
-input_dir = "input_vids"
+input_dir = "replacement_input_vids"
 skip = ["old"]
 
 for elem in os.listdir(input_dir):

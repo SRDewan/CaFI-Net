@@ -85,8 +85,8 @@ class ExtractImageFromVideo(object):
 
             
 def create_image_grid(images, grid_size=None):
-    border_size = 4
-    split_border = 6
+    border_size = 6
+    split_border = 12
     assert images.ndim == 3 or images.ndim == 4
     num, img_w, img_h = images.shape[0], images.shape[-2], images.shape[-3]
 
@@ -96,15 +96,20 @@ def create_image_grid(images, grid_size=None):
         grid_w = max(int(np.ceil(np.sqrt(num))), 1)
         grid_h = max((num - 1) // grid_w + 1, 1)
 
-    grid = np.zeros([grid_h * img_h + (grid_h - 1) * border_size, grid_w * img_w + (grid_w - 1) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
+    grid = np.zeros([grid_h * img_h + (grid_h + 1) * border_size, grid_w * img_w + (grid_w + 2) * border_size + split_border] + list(images.shape[-1:]), dtype=images.dtype)
     grid_shape = grid.shape
     grid[:, :grid_shape[1] // 2, ...] = np.array([0, 62, 81])
     grid[:, grid_shape[1] // 2:, ...] = np.array([81, 62, 62])
     for idx in range(num):
-        x = (idx % grid_w) * (img_w + border_size)
-        y = (idx // grid_w) * (img_h + border_size)
+        x = (idx % grid_w) * (img_w + border_size) + border_size
+        y = (idx // grid_w) * (img_h + border_size) + border_size
+
         if (idx % grid_w) >= 3:
+            if (idx % grid_w) == 3:
+                grid[:, x : x + split_border, ...] = np.array([255, 255, 255])
             x += split_border
+            x += border_size
+
         grid[y : y + img_h, x : x + img_w, ...] = images[idx]
 
     # plt.imshow(grid)
@@ -186,7 +191,7 @@ def merge_videos(videos_in, video_out, grid_size=None, titles=None, title_positi
     print(f'Output video saved... {video_out}')
     
 list_videos = []
-input_dir = "input_vids"
+input_dir = "replacement_input_vids"
 skip = []
 for elem in sorted(os.listdir(input_dir)):
     path = os.path.join(input_dir, elem)
@@ -211,7 +216,7 @@ for elem in sorted(os.listdir(input_dir)):
         continue
 
     for vid in sorted(os.listdir(path)):
-        if ".mov" not in vid:
+        if ".mov" not in vid or "_old" in vid:
             continue
 
         vid_path = os.path.join(path, vid)
